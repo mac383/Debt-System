@@ -1,0 +1,149 @@
+--CREATE DATABASE DebtManagementSystemDB
+
+USE DebtManagementSystemDB
+
+CREATE TABLE Companies
+(
+	CompanyId INT IDENTITY(1, 1) NOT NULL PRIMARY KEY,
+	ManagerFullName NVARCHAR(50) NOT NULL,
+	CompanyName NVARCHAR(50) NOT NULL,
+	CompanyCode NVARCHAR(14) NOT NULL UNIQUE,
+	CompanyImage VARBINARY(MAX) NULL,
+	Phone1 NVARCHAR(14) NOT NULL UNIQUE,
+	Phone2 NVARCHAR(14) NULL,
+	Address NVARCHAR(150) NOT NULL,
+	SubscriptionFee MONEY NOT NULL,
+	Currency NVARCHAR(14) NOT NULL,
+	RegistrationDate DATE NOT NULL DEFAULT GETDATE(),
+	SubscriptionStatus BIT NOT NULL,
+	SubscriptionStartDate DATE NOT NULL,
+	SubscriptionEndDate DATE NOT NULL,
+	Description NVARCHAR(250) NULL,
+	IsPaid BIT NOT NULL,
+	ByAdmin INT NOT NULL,
+	Action NVARCHAR(25) NOT NULL
+)
+
+CREATE TABLE Settings
+(
+	SettingId INT IDENTITY(1, 1) NOT NULL PRIMARY KEY,
+	CompanyName NVARCHAR(50) NOT NULL,
+	Description NVARCHAR(MAX) NULL,
+	Logo VARBINARY(MAX) NULL,
+	Currency NVARCHAR(14) NOT NULL,
+	PaymentRequestMessage NVARCHAR(250) NULL,
+	CompanyId INT NOT NULL REFERENCES Companies(CompanyId)
+)
+
+CREATE TABLE People
+(
+	PersonId INT IDENTITY(1, 1) NOT NULL PRIMARY KEY,
+	FullName NVARCHAR(50) NOT NULL,
+	Phone1 NVARCHAR(14) NOT NULL,
+	Phone2 NVARCHAR(14) NULL,
+	TelegramID NVARCHAR(25) NULL,
+	CompanyId INT NOT NULL REFERENCES Companies(CompanyId),
+	ByUser INT NULL
+)
+
+CREATE TABLE Users
+(
+	UserId INT IDENTITY(1, 1) NOT NULL PRIMARY KEY,
+	UserName NVARCHAR(14) NOT NULL,
+	Password NVARCHAR(100) NOT NULL,
+	Permissions BIGINT NOT NULL,
+	Image VARBINARY(MAX) NULL,
+	IsActive BIT NOT NULL,
+	IsDeleted BIT NOT NULL,
+	PersonId INT NOT NULL REFERENCES People(PersonId)
+)
+
+CREATE TABLE Categories
+(
+	CategoryId INT IDENTITY(1, 1) NOT NULL PRIMARY KEY,
+	CategoryName NVARCHAR(50) NOT NULL,
+	CategoryImage VARBINARY(MAX) NULL,
+	ByUser INT NOT NULL REFERENCES Users(UserId),
+	CompanyId INT NOT NULL REFERENCES Companies(CompanyId)
+)
+
+CREATE TABLE SalesUnits
+(
+	UnitId INT IDENTITY(1, 1) NOT NULL PRIMARY KEY,
+	UnitName NVARCHAR(50) NOT NULL,
+	ByUser INT NOT NULL REFERENCES Users(UserId),
+	CompanyId INT NOT NULL REFERENCES Companies(CompanyId)
+)
+
+CREATE TABLE Products
+(
+	ProductId INT IDENTITY(1, 1) NOT NULL PRIMARY KEY,
+	ProductName NVARCHAR(100) NOT NULL,
+	ProductCode NVARCHAR(14) NOT NULL UNIQUE,
+	ProductPrice MONEY NOT NULL,
+	ProductImage VARBINARY(MAX) NULL,
+	CategoryId INT NOT NULL REFERENCES Categories(CategoryId),
+	UnitId INT NOT NULL REFERENCES SalesUnits(UnitId),
+	ByUser INT NOT NULL REFERENCES Users(UserId),
+	CompanyId INT NOT NULL REFERENCES Companies(CompanyId)
+)
+
+CREATE TABLE Customers
+(
+	CustomerId INT IDENTITY(1, 1) NOT NULL PRIMARY KEY,
+	CustomerCode NVARCHAR(14) NOT NULL UNIQUE,
+	Address NVARCHAR(100) NULL,
+	CustomerStatus BIT NOT NULL DEFAULT 1,
+	PersonId INT NOT NULL REFERENCES People(PersonId)
+)
+
+CREATE TABLE DebtRecords
+(
+	DebtRecordId INT IDENTITY(1, 1) NOT NULL PRIMARY KEY,
+	CustomerId INT NOT NULL REFERENCES Customers(CustomerId),
+	TotalPrice MONEY NOT NULL,
+	RemainingAmount MONEY NOT NULL,
+	IsPaid BIT NOT NULL DEFAULT 0,
+	RegistrationDate DATE NOT NULL DEFAULT GETDATE(),
+	Description NVARCHAR(250) NULL,
+	ByUser INT NOT NULL REFERENCES Users(UserId),
+	CompanyId INT NOT NULL REFERENCES Companies(CompanyId)
+)
+
+CREATE TABLE PaidRecords
+(
+	PaidRecordId INT IDENTITY(1, 1) NOT NULL PRIMARY KEY,
+	DebtRecordId INT NOT NULL REFERENCES DebtRecords(DebtRecordId),
+	PaymentTypes BIT NOT NULL,
+	PaymentAmount MONEY NOT NULL,
+	RegistrationDate DATE NOT NULL DEFAULT GETDATE(),
+	Description NVARCHAR(250) NULL,
+	ByUser INT NOT NULL REFERENCES Users(UserId),
+	CompanyId INT NOT NULL REFERENCES Companies(CompanyId)
+)
+
+CREATE TABLE DebtRecords_Products
+(
+	Debt_Product_Id INT IDENTITY(1, 1) NOT NULL PRIMARY KEY,
+	DebtRecordId INT NOT NULL REFERENCES DebtRecords(DebtRecordId),
+	ProductId INT NOT NULL REFERENCES Products(ProductId),
+	Quantity INT NOT NULL,
+	ProductPrice MONEY NOT NULL,
+	TotalPrice MONEY NOT NULL,
+	Currency NVARCHAR(14) NOT NULL,
+	CompanyId INT NOT NULL REFERENCES Companies(CompanyId)
+)
+
+CREATE TABLE Errors
+(
+	ErrorId INT IDENTITY(1, 1) PRIMARY KEY,
+	ErrorDate DATE NOT NULL DEFAULT GETDATE(),
+	ErrorMessage NVARCHAR(250) NOT NULL,
+	Source NVARCHAR(50) NOT NULL,
+	Class NVARCHAR(50) NOT NULL,
+	Method NVARCHAR(50) NOT NULL,
+	StackTrace NVARCHAR(250) NOT NULL,
+	CompanyId INT NOT NULL,
+	Action NVARCHAR(50) NOT NULL,
+	Params NVARCHAR(500) NOT NULL
+)
